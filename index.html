@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>เกมแรเงาแผนภาพเวนน์ - สื่อการสอนเรื่องการดำเนินการของเซต</title>
+  
+  <!-- Google Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-area">
+        <span class="material-symbols-outlined logo-icon">blur_on</span>
+        <div>
+          <h1>แรเงาเซตแสนสนุก</h1>
+          <p>เรียนรู้เรื่องการดำเนินการของเซตด้วยแผนภาพเวนน์-ออยเลอร์</p>
+        </div>
+      </div>
+      
+      <!-- Gamification Panel -->
+      <div class="stats-panel">
+        <button class="stat-card leaderboard-btn" id="view-leaderboard-btn" title="ดูตารางคะแนนสูงสุด" style="cursor: pointer; border: 1px solid var(--border-color); background: var(--bg-card-solid);">
+          <span class="material-symbols-outlined stat-icon trophy-btn-icon" style="color: var(--warning);">emoji_events</span>
+          <div class="stat-info">
+            <span class="stat-label">ตารางคะแนน</span>
+            <span class="stat-value">Top 20</span>
+          </div>
+        </button>
+        <div class="stat-card streak-card" title="ตอบถูกต่อเนื่อง">
+          <span class="material-symbols-outlined stat-icon streak-icon">local_fire_department</span>
+          <div class="stat-info">
+            <span class="stat-label">ต่อเนื่อง</span>
+            <span class="stat-value" id="streak-count">0</span>
+          </div>
+        </div>
+        
+        <div class="stat-card score-card" title="คะแนนรวม">
+          <span class="material-symbols-outlined stat-icon score-icon">workspace_premium</span>
+          <div class="stat-info">
+            <span class="stat-label">คะแนน</span>
+            <span class="stat-value" id="score-value">0</span>
+          </div>
+        </div>
+
+        <div class="stat-card timer-card" id="timer-display" title="เวลาที่เหลือ">
+          <span class="material-symbols-outlined stat-icon timer-icon" id="timer-icon">timer</span>
+          <div class="stat-info">
+            <span class="stat-label">เวลา</span>
+            <span class="stat-value" id="timer-value">60</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="game-layout">
+      <!-- Left Panel: Lesson Selector & Current Question -->
+      <section class="control-panel">
+        <!-- Level / Mode Selector -->
+        <div class="panel-section card">
+          <h2><span class="material-symbols-outlined section-icon">school</span>ระดับการเล่น</h2>
+          <div class="level-selector">
+            <button class="level-btn active" data-level="1">
+              <span class="level-num">1</span>
+              <span class="level-name">พื้นฐาน 2 เซต</span>
+            </button>
+            <button class="level-btn" data-level="2">
+              <span class="level-num">2</span>
+              <span class="level-name">ดำเนินการ 2 เซต</span>
+            </button>
+            <button class="level-btn" data-level="3">
+              <span class="level-num">3</span>
+              <span class="level-name">ดำเนินการ 3 เซต</span>
+            </button>
+          </div>
+          <div class="timer-toggle-area">
+            <label class="switch-container">
+              <input type="checkbox" id="timer-switch" checked>
+              <span class="slider round"></span>
+            </label>
+            <span class="switch-label">เปิดใช้งานระบบเวลาท้าทาย</span>
+          </div>
+        </div>
+
+        <!-- Current Question Display -->
+        <div class="panel-section card question-card">
+          <div class="question-header">
+            <span class="badge" id="level-badge">ระดับ 1</span>
+            <span class="question-index" id="question-index-display">ข้อที่ 1</span>
+          </div>
+          <div class="question-body">
+            <p class="question-instruction">จงแรเงาแผนภาพเวนน์แสดงพื้นที่ของเซตต่อไปนี้:</p>
+            <div class="formula-container" id="formula-display">
+              A ∪ B
+            </div>
+            <div class="thai-formula" id="thai-formula-display">
+              (A ยูเนียน B)
+            </div>
+          </div>
+        </div>
+
+        <!-- Legend / Reference Guide -->
+        <div class="panel-section card legend-card">
+          <h3><span class="material-symbols-outlined legend-icon">info</span> คู่มือสัญลักษณ์</h3>
+          <div class="legend-grid">
+            <div class="legend-item">
+              <span class="symbol">∪</span>
+              <span class="desc"><strong>ยูเนียน (Union)</strong>: รวมพื้นที่ทั้งหมดเข้าด้วยกัน</span>
+            </div>
+            <div class="legend-item">
+              <span class="symbol">∩</span>
+              <span class="desc"><strong>อินเตอร์เซกชัน (Intersection)</strong>: เลือกเฉพาะพื้นที่ที่ซ้อนทับกัน</span>
+            </div>
+            <div class="legend-item">
+              <span class="symbol">−</span>
+              <span class="desc"><strong>ผลต่าง (Difference)</strong>: เอาตัวตั้ง หักตัวลบออก</span>
+            </div>
+            <div class="legend-item">
+              <span class="symbol">′</span>
+              <span class="desc"><strong>คอมพลีเมนต์ (Complement)</strong>: เลือกพื้นที่ทั้งหมดด้านนอก</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Center Panel: Interactive Venn Diagram -->
+      <section class="canvas-panel card">
+        <div class="canvas-header">
+          <span class="canvas-title">แผนภาพเวนน์-ออยเลอร์</span>
+          <span class="hint-text">คลิกบนพื้นที่ของแผนภาพเพื่อแรเงา</span>
+        </div>
+        
+        <div class="diagram-container">
+          <!-- 2-Set SVG Diagram (Level 1 & 2) -->
+          <svg id="svg-2-set" viewBox="0 0 500 340" class="venn-svg">
+            <defs>
+              <!-- Clips for 2-Set -->
+              <clipPath id="clip-2-A">
+                <circle cx="200" cy="170" r="100" />
+              </clipPath>
+              <clipPath id="clip-2-B">
+                <circle cx="300" cy="170" r="100" />
+              </clipPath>
+              <clipPath id="clip-2-AB" clip-path="url(#clip-2-A)">
+                <circle cx="300" cy="170" r="100" />
+              </clipPath>
+
+              <!-- Masks for 2-Set (Subtraction) -->
+              <mask id="mask-2-sub-A">
+                <rect width="100%" height="100%" fill="white" />
+                <circle cx="200" cy="170" r="100" fill="black" />
+              </mask>
+              <mask id="mask-2-sub-B">
+                <rect width="100%" height="100%" fill="white" />
+                <circle cx="300" cy="170" r="100" fill="black" />
+              </mask>
+              <mask id="mask-2-sub-AB">
+                <rect width="100%" height="100%" fill="white" />
+                <circle cx="200" cy="170" r="100" fill="black" />
+                <circle cx="300" cy="170" r="100" fill="black" />
+              </mask>
+            </defs>
+
+            <!-- Region Fills (Shaded layer) -->
+            <!-- 00: Universe Outside A & B -->
+            <rect class="region" data-region="00" x="5" y="5" width="490" height="330" rx="12" mask="url(#mask-2-sub-AB)" />
+            <!-- 10: A Only (A - B) -->
+            <rect class="region" data-region="10" x="5" y="5" width="490" height="330" clip-path="url(#clip-2-A)" mask="url(#mask-2-sub-B)" />
+            <!-- 01: B Only (B - A) -->
+            <rect class="region" data-region="01" x="5" y="5" width="490" height="330" clip-path="url(#clip-2-B)" mask="url(#mask-2-sub-A)" />
+            <!-- 11: A Intersect B -->
+            <rect class="region" data-region="11" x="5" y="5" width="490" height="330" clip-path="url(#clip-2-AB)" />
+
+            <!-- Outlines and Labels (Foreground visual layer) -->
+            <rect class="universe-border" x="5" y="5" width="490" height="330" rx="12" />
+            <circle class="set-circle set-a" cx="200" cy="170" r="100" />
+            <circle class="set-circle set-b" cx="300" cy="170" r="100" />
+            
+            <!-- Labels -->
+            <text class="label-u" x="25" y="35">U</text>
+            <text class="label-set label-a-text" x="120" y="90">A</text>
+            <text class="label-set label-b-text" x="380" y="90">B</text>
+          </svg>
+
+          <!-- 3-Set SVG Diagram (Level 3) -->
+          <svg id="svg-3-set" viewBox="0 0 500 440" class="venn-svg hidden">
+            <defs>
+              <!-- Clips for 3-Set -->
+              <clipPath id="clip-A">
+                <circle cx="200" cy="190" r="100" />
+              </clipPath>
+              <clipPath id="clip-B">
+                <circle cx="300" cy="190" r="100" />
+              </clipPath>
+              <clipPath id="clip-C">
+                <circle cx="250" cy="270" r="100" />
+              </clipPath>
+              <clipPath id="clip-AB" clip-path="url(#clip-A)">
+                <circle cx="300" cy="190" r="100" />
+              </clipPath>
+              <clipPath id="clip-BC" clip-path="url(#clip-B)">
+                <circle cx="250" cy="270" r="100" />
+              </clipPath>
+              <clipPath id="clip-AC" clip-path="url(#clip-A)">
+                <circle cx="250" cy="270" r="100" />
+              </clipPath>
+              <clipPath id="clip-ABC" clip-path="url(#clip-AB)">
+                <circle cx="250" cy="270" r="100" />
+              </clipPath>
+
+              <!-- Masks for 3-Set (Subtraction) -->
+              <mask id="mask-sub-A">
+                <rect width="100%" height="100%" fill="white" />
+                <circle cx="200" cy="190" r="100" fill="black" />
+              </mask>
+              <mask id="mask-sub-B">
+                <rect width="100%" height="100%" fill="white" />
+                <circle cx="300" cy="190" r="100" fill="black" />
+              </mask>
+              <mask id="mask-sub-C">
+                <rect width="100%" height="100%" fill="white" />
+                <circle cx="250" cy="270" r="100" fill="black" />
+              </mask>
+              <mask id="mask-sub-AB">
+                <rect width="100%" height="100%" fill="white" />
+                <circle cx="200" cy="190" r="100" fill="black" />
+                <circle cx="300" cy="190" r="100" fill="black" />
+              </mask>
+              <mask id="mask-sub-BC">
+                <rect width="100%" height="100%" fill="white" />
+                <circle cx="300" cy="190" r="100" fill="black" />
+                <circle cx="250" cy="270" r="100" fill="black" />
+              </mask>
+              <mask id="mask-sub-AC">
+                <rect width="100%" height="100%" fill="white" />
+                <circle cx="200" cy="190" r="100" fill="black" />
+                <circle cx="250" cy="270" r="100" fill="black" />
+              </mask>
+              <mask id="mask-sub-ABC">
+                <rect width="100%" height="100%" fill="white" />
+                <circle cx="200" cy="190" r="100" fill="black" />
+                <circle cx="300" cy="190" r="100" fill="black" />
+                <circle cx="250" cy="270" r="100" fill="black" />
+              </mask>
+            </defs>
+
+            <!-- Region Fills (Shaded layer) -->
+            <!-- 000: Outside All -->
+            <rect class="region" data-region="000" x="5" y="5" width="490" height="430" rx="12" mask="url(#mask-sub-ABC)" />
+            
+            <!-- 100: A Only -->
+            <rect class="region" data-region="100" x="5" y="5" width="490" height="430" clip-path="url(#clip-A)" mask="url(#mask-sub-BC)" />
+            <!-- 010: B Only -->
+            <rect class="region" data-region="010" x="5" y="5" width="490" height="430" clip-path="url(#clip-B)" mask="url(#mask-sub-AC)" />
+            <!-- 001: C Only -->
+            <rect class="region" data-region="001" x="5" y="5" width="490" height="430" clip-path="url(#clip-C)" mask="url(#mask-sub-AB)" />
+
+            <!-- 110: A & B (not C) -->
+            <rect class="region" data-region="110" x="5" y="5" width="490" height="430" clip-path="url(#clip-AB)" mask="url(#mask-sub-C)" />
+            <!-- 101: A & C (not B) -->
+            <rect class="region" data-region="101" x="5" y="5" width="490" height="430" clip-path="url(#clip-AC)" mask="url(#mask-sub-B)" />
+            <!-- 011: B & C (not A) -->
+            <rect class="region" data-region="011" x="5" y="5" width="490" height="430" clip-path="url(#clip-BC)" mask="url(#mask-sub-A)" />
+
+            <!-- 111: A & B & C -->
+            <rect class="region" data-region="111" x="5" y="5" width="490" height="430" clip-path="url(#clip-ABC)" />
+
+            <!-- Outlines and Labels (Foreground visual layer) -->
+            <rect class="universe-border" x="5" y="5" width="490" height="430" rx="12" />
+            <circle class="set-circle set-a" cx="200" cy="190" r="100" />
+            <circle class="set-circle set-b" cx="300" cy="190" r="100" />
+            <circle class="set-circle set-c" cx="250" cy="270" r="100" />
+
+            <!-- Labels -->
+            <text class="label-u" x="25" y="35">U</text>
+            <text class="label-set label-a-text" x="120" y="110">A</text>
+            <text class="label-set label-b-text" x="380" y="110">B</text>
+            <text class="label-set label-c-text" x="250" y="385">C</text>
+          </svg>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <button class="btn btn-secondary" id="clear-btn">
+            <span class="material-symbols-outlined btn-icon">restart_alt</span> ล้างข้อมูล
+          </button>
+          <button class="btn btn-info" id="hint-btn">
+            <span class="material-symbols-outlined btn-icon">lightbulb</span> คำแนะนำ
+          </button>
+          <button class="btn btn-primary" id="submit-btn">
+            <span class="material-symbols-outlined btn-icon">check_circle</span> ส่งคำตอบ
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <!-- Feedback & Step-by-Step Explanation Section -->
+    <section class="feedback-section hidden" id="feedback-panel">
+      <!-- Correct/Incorrect banner -->
+      <div class="feedback-banner" id="feedback-banner">
+        <span class="material-symbols-outlined banner-icon" id="feedback-icon">task_alt</span>
+        <div class="banner-text">
+          <h3 id="feedback-title">ยินดีด้วย! คุณตอบถูกต้อง</h3>
+          <p id="feedback-desc">คุณสามารถก้าวไปทำข้อถัดไปหรืออ่านคำอธิบายด้านล่างได้</p>
+        </div>
+        <button class="btn btn-success" id="next-question-btn">
+          ข้อถัดไป <span class="material-symbols-outlined btn-icon-right">arrow_forward</span>
+        </button>
+      </div>
+
+      <!-- Explanation Content (Shown below) -->
+      <div class="explanation-container card">
+        <h4 class="explanation-title"><span class="material-symbols-outlined exp-icon">menu_book</span>อธิบายแนวคิดแบบเป็นขั้นตอน (Step-by-Step Explanation)</h4>
+        
+        <div class="explanation-body">
+          <div class="explanation-text-column" id="explanation-steps">
+            <!-- Dynamic steps will be injected here -->
+          </div>
+          
+          <div class="explanation-visuals">
+            <div class="visual-box">
+              <span class="visual-label">คำตอบที่ถูกต้อง</span>
+              <div class="mini-diagram-wrapper" id="correct-mini-diagram">
+                <!-- SVG mini diagram clone for reference -->
+              </div>
+            </div>
+            <div class="visual-box" id="student-visual-box">
+              <span class="visual-label">คำตอบของคุณ</span>
+              <div class="mini-diagram-wrapper" id="student-mini-diagram">
+                <!-- SVG mini diagram clone of student's shading -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Congratulations Overlay (Game Over) -->
+    <div class="overlay hidden" id="game-over-overlay">
+      <div class="congrats-card card">
+        <span class="material-symbols-outlined trophy-icon">emoji_events</span>
+        <h2>สุดยอดไปเลย!</h2>
+        <p>คุณตอบคำถามได้ครบตามเป้าหมายของระดับนี้แล้ว!</p>
+        <div class="results-summary">
+          <div class="summary-item">
+            <span class="summary-label">คะแนนที่ได้</span>
+            <span class="summary-value" id="final-score">0</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">ตอบถูกต่อเนื่องสูงสุด</span>
+            <span class="summary-value" id="final-streak">0</span>
+          </div>
+        </div>
+        
+        <div class="leaderboard-save-section" id="leaderboard-save-section" style="margin: 15px 0; padding: 15px; border-top: 1px dashed var(--border-color); border-bottom: 1px dashed var(--border-color);">
+          <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <input type="text" id="player-name-input" placeholder="ชื่อผู้เล่น (เช่น ด.ช.วินัย)" maxlength="20" class="name-input" style="flex: 2; padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 14px; font-weight: 500; outline: none; transition: border-color 0.2s;">
+            <input type="text" id="player-class-input" placeholder="ห้อง (เช่น ม.5/1)" maxlength="10" class="class-input name-input" style="flex: 1; padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); text-align: center; font-size: 14px; font-weight: 500; outline: none; transition: border-color 0.2s;">
+          </div>
+          <button class="btn btn-primary" id="save-score-btn" style="width: 100%;">
+            <span class="material-symbols-outlined btn-icon">workspace_premium</span> บันทึกคะแนนลงตาราง
+          </button>
+        </div>
+        <div id="save-status-msg" class="save-status-msg hidden" style="font-weight: 600; color: var(--success); margin: 10px 0;">บันทึกสถิติเรียบร้อยแล้ว!</div>
+
+        <div class="overlay-buttons" style="margin-top: 15px;">
+          <button class="btn btn-secondary" id="replay-btn">
+            <span class="material-symbols-outlined btn-icon">replay</span> เล่นอีกครั้ง
+          </button>
+          <button class="btn btn-primary" id="next-level-btn">
+            <span class="material-symbols-outlined btn-icon">trending_up</span> ไปยังระดับถัดไป
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leaderboard Overlay Modal -->
+    <div class="overlay hidden" id="leaderboard-modal">
+      <div class="leaderboard-card card" style="width: 100%; max-width: 700px; padding: 25px; border-radius: var(--radius-xl); background: var(--bg-card-solid); display: flex; flex-direction: column; gap: 15px;">
+        <div class="leaderboard-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+          <h2 style="font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; color: var(--text-main); margin: 0;">
+            <span class="material-symbols-outlined trophy-modal-icon" style="color: var(--warning); font-size: 24px;">emoji_events</span> ตารางคะแนนสูงสุด 20 อันดับ
+          </h2>
+          <div class="filter-area" style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 12px; font-weight: 600; color: var(--text-muted);">เลือกห้องเรียน:</span>
+            <select id="leaderboard-class-filter" style="padding: 6px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 13px; font-weight: 600; color: var(--text-main); outline: none; background: white; cursor: pointer;">
+              <option value="all">ทั้งหมด</option>
+            </select>
+          </div>
+          <button class="close-modal-btn" id="close-leaderboard-btn" style="background: none; border: none; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: 50%; transition: background-color 0.2s;">
+            <span class="material-symbols-outlined" style="font-size: 24px;">close</span>
+          </button>
+        </div>
+        
+        <div class="leaderboard-table-container" style="max-height: 380px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+          <table class="leaderboard-table" style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+            <thead style="background: var(--bg-page); position: sticky; top: 0; z-index: 5; border-bottom: 1px solid var(--border-color);">
+              <tr>
+                <th style="padding: 12px; width: 65px; text-align: center; font-weight: 600; color: var(--text-muted);">อันดับ</th>
+                <th style="padding: 12px; font-weight: 600; color: var(--text-muted);">ชื่อผู้เล่น</th>
+                <th style="padding: 12px; width: 100px; text-align: center; font-weight: 600; color: var(--text-muted);">ห้องเรียน</th>
+                <th style="padding: 12px; width: 100px; text-align: center; font-weight: 600; color: var(--text-muted);">ระดับสูงสุด</th>
+                <th style="padding: 12px; width: 100px; text-align: right; font-weight: 600; color: var(--text-muted);">คะแนน</th>
+                <th style="padding: 12px; width: 80px; text-align: center; font-weight: 600; color: var(--text-muted);">คอมโบ</th>
+                <th style="padding: 12px; width: 130px; text-align: center; font-weight: 600; color: var(--text-muted);">วันที่</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-table-body">
+              <!-- Dynamically populated rows -->
+            </tbody>
+          </table>
+          <div class="no-records hidden" id="no-records-msg" style="padding: 30px; text-align: center; color: var(--text-light); font-style: italic;">
+            ไม่มีข้อมูลบันทึกสถิติในขณะนี้ ร่วมเป็นคนแรกที่จะประทับชื่อบนกระดาน!
+          </div>
+        </div>
+        
+        <div class="leaderboard-footer" style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px dashed var(--border-color);">
+          <button class="btn btn-secondary" id="export-leaderboard-btn" style="border-color: rgba(16, 185, 129, 0.2); color: var(--success); background: var(--success-light); padding: 8px 16px; font-size: 12px;">
+            <span class="material-symbols-outlined btn-icon" style="font-size: 16px;">download</span> ส่งออกคะแนน (Export CSV)
+          </button>
+          <button class="btn btn-secondary" id="clear-leaderboard-btn" style="border-color: rgba(239, 68, 68, 0.2); color: var(--danger); background: var(--danger-light); padding: 8px 16px; font-size: 12px;">
+            <span class="material-symbols-outlined btn-icon" style="font-size: 16px;">delete_forever</span> ล้างตารางคะแนนทั้งหมด
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Passcode Verification Modal -->
+    <div class="overlay hidden" id="passcode-modal" style="z-index: 110;">
+      <div class="card" style="width: 100%; max-width: 340px; padding: 25px; text-align: center; display: flex; flex-direction: column; gap: 14px; background: var(--bg-card-solid); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg);">
+        <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; justify-content: center; gap: 6px; margin: 0;">
+          <span class="material-symbols-outlined" style="color: var(--primary);">admin_panel_settings</span> ยืนยันรหัสผ่านคุณครู
+        </h3>
+        <p style="font-size: 12px; color: var(--text-muted); margin: 0;">กรุณากรอกรหัสผ่านเพื่ออนุมัติสิทธิ์จัดการระบบ</p>
+        <input type="password" id="teacher-passcode-input" placeholder="รหัสผ่าน (default: VennTeacher2026)" class="name-input" style="width: 100%; padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); text-align: center; font-size: 14px; font-weight: 500; outline: none; transition: border-color 0.2s;">
+        <div style="display: flex; gap: 10px; margin-top: 5px;">
+          <button class="btn btn-secondary" id="cancel-passcode-btn" style="flex: 1; padding: 8px; font-size: 13px;">ยกเลิก</button>
+          <button class="btn btn-primary" id="confirm-passcode-btn" style="flex: 1; padding: 8px; font-size: 13px;">ยืนยัน</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
