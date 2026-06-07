@@ -999,9 +999,33 @@ function showGameOver() {
   gameOverOverlay.classList.remove('hidden');
 }
 
-function handleLevelSelect(level) {
+// Helper: offer to save score before resetting (used by replay/level-change mid-game)
+function offerSaveBeforeReset() {
+  return new Promise((resolve) => {
+    if (score <= 0) {
+      resolve();
+      return;
+    }
+    // Show the game-over overlay so the player can save
+    showGameOver();
+    // We resolve immediately — the player can save from the overlay
+    // The replay/next-level buttons inside the overlay will handle the actual reset
+    resolve('showed_overlay');
+  });
+}
+
+function handleLevelSelect(level, fromOverlay = false) {
   currentLevel = level;
   currentQuestionIndex = 0;
+  
+  // Reset score & streak only when selecting a new level from the level bar (not from overlay)
+  if (!fromOverlay) {
+    score = 0;
+    streak = 0;
+    maxStreak = 0;
+    scoreValue.textContent = 0;
+    streakCount.textContent = 0;
+  }
   
   // Toggle active button style
   document.querySelectorAll('.level-btn').forEach(btn => {
@@ -1071,6 +1095,16 @@ function initApp() {
   document.querySelectorAll('.level-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const lvl = parseInt(btn.getAttribute('data-level'));
+      if (lvl === currentLevel) return; // same level, do nothing
+      
+      if (score > 0 && currentQuestionIndex > 0) {
+        const confirmMsg = `คุณมีคะแนน ${score} คะแนนที่ยังไม่ได้บันทึก!\n\nหากเปลี่ยนระดับ คะแนนจะถูกรีเซ็ต\nต้องการบันทึกคะแนนก่อนหรือไม่?\n\n• กด "ตกลง" เพื่อเปิดหน้าบันทึกคะแนนก่อน\n• กด "ยกเลิก" เพื่อเปลี่ยนระดับทันที (คะแนนหาย)`;
+        if (confirm(confirmMsg)) {
+          showGameOver();
+          return; // Let them save, then manually select level
+        }
+      }
+      
       handleLevelSelect(lvl);
     });
   });
@@ -1094,6 +1128,7 @@ function initApp() {
     gameOverOverlay.classList.add('hidden');
     score = 0;
     streak = 0;
+    maxStreak = 0;
     scoreValue.textContent = 0;
     streakCount.textContent = 0;
     currentQuestionIndex = 0;
@@ -1103,7 +1138,7 @@ function initApp() {
   nextLevelBtn.addEventListener('click', () => {
     gameOverOverlay.classList.add('hidden');
     if (currentLevel < 3) {
-      handleLevelSelect(currentLevel + 1);
+      handleLevelSelect(currentLevel + 1, true);
     }
   });
 
@@ -1156,18 +1191,28 @@ function initApp() {
       return;
     }
     
-    savePlayerScore(name, classroom, score, currentLevel, maxStreak);
+    if (score <= 0) {
+      alert('คะแนนเป็น 0 ไม่สามารถบันทึกได้ ลองเล่นอีกครั้งนะ!');
+      return;
+    }
     
-    // Hide input section and show success msg
-    document.getElementById('leaderboard-save-section').classList.add('hidden');
-    document.getElementById('save-status-msg').classList.remove('hidden');
-    
-    // Show leaderboard immediately after saving
-    setTimeout(() => {
-      updateClassroomFilterDropdown('all');
-      renderLeaderboard('all');
-      leaderboardModal.classList.remove('hidden');
-    }, 800);
+    try {
+      savePlayerScore(name, classroom, score, currentLevel, maxStreak);
+      
+      // Hide input section and show success msg
+      document.getElementById('leaderboard-save-section').classList.add('hidden');
+      document.getElementById('save-status-msg').classList.remove('hidden');
+      
+      // Show leaderboard immediately after saving
+      setTimeout(() => {
+        updateClassroomFilterDropdown('all');
+        renderLeaderboard('all');
+        leaderboardModal.classList.remove('hidden');
+      }, 800);
+    } catch (e) {
+      console.error('Error saving score to localStorage:', e);
+      alert('เกิดข้อผิดพลาดในการบันทึกคะแนน! กรุณาลองอีกครั้ง หรือตรวจสอบว่าเบราว์เซอร์ไม่ได้เปิดโหมดส่วนตัว (Private/Incognito)');
+    }
   });
   
   // Passcode Modal Button Events
