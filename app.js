@@ -9,223 +9,116 @@ const UnionNode = (left, right) => ({ type: 'union', left, right });
 const IntersectNode = (left, right) => ({ type: 'intersect', left, right });
 const DifferenceNode = (left, right) => ({ type: 'difference', left, right });
 
-// Curated Question Pool for 3 Levels
+// ==========================================
+// Config: Online Leaderboard URL (Google Sheets Apps Script Web App)
+// ==========================================
+// ถ้าต้องการใช้สถิติออนไลน์ ให้วางลิงก์ Web App URL จาก Google Apps Script ที่ช่องนี้
+// ตัวอย่าง: 'https://script.google.com/macros/s/AKfycbz.../exec'
+// หากปล่อยเป็นค่าว่าง ระบบจะสลับไปบันทึกสถิติแบบออฟไลน์ลงเครื่อง (localStorage) แทนอัตโนมัติ
+const ONLINE_LEADERBOARD_API_URL = 'https://script.google.com/macros/s/AKfycbyMWDBrZ6onZVEC_bMdvxn2A2p0pKCM1TdhuQkW0vYJGFnuuKAy3BF8FkNl9uO07F45/exec'; 
+
+// Curated Question Pool for 3 Levels (30+ questions per level for high variety)
 const QUESTION_POOL = {
   1: [
-    {
-      ast: SetNode('A'),
-      formula: "A",
-      thaiFormula: "เซต A",
-      difficulty: "ง่าย"
-    },
-    {
-      ast: SetNode('B'),
-      formula: "B",
-      thaiFormula: "เซต B",
-      difficulty: "ง่าย"
-    },
-    {
-      ast: ComplementNode(SetNode('A')),
-      formula: "A'",
-      thaiFormula: "คอมพลีเมนต์ของเซต A (ไม่ใช่ A)",
-      difficulty: "ง่าย"
-    },
-    {
-      ast: ComplementNode(SetNode('B')),
-      formula: "B'",
-      thaiFormula: "คอมพลีเมนต์ของเซต B (ไม่ใช่ B)",
-      difficulty: "ง่าย"
-    },
-    {
-      ast: SetNode('U'),
-      formula: "U",
-      thaiFormula: "เอกภพสัมพัทธ์ U (พื้นที่ทั้งหมด)",
-      difficulty: "ง่าย"
-    },
-    {
-      ast: SetNode('empty'),
-      formula: "∅",
-      thaiFormula: "เซตว่าง (ไม่แรเงาพื้นที่ใดเลย)",
-      difficulty: "ง่าย"
-    },
-    {
-      ast: IntersectNode(SetNode('A'), SetNode('B')),
-      formula: "A ∩ B",
-      thaiFormula: "A อินเตอร์เซกชัน B (พื้นที่ส่วนซ้ำของ A และ B)",
-      difficulty: "ง่าย"
-    },
-    {
-      ast: UnionNode(SetNode('A'), SetNode('B')),
-      formula: "A ∪ B",
-      thaiFormula: "A ยูเนียน B (พื้นที่ของ A และ B รวมกัน)",
-      difficulty: "ง่าย"
-    },
-    {
-      ast: DifferenceNode(SetNode('A'), SetNode('B')),
-      formula: "A − B",
-      thaiFormula: "A ผลต่าง B (เอาสมาชิกของ A แต่ไม่เอา B)",
-      difficulty: "ง่าย"
-    },
-    {
-      ast: DifferenceNode(SetNode('B'), SetNode('A')),
-      formula: "B − A",
-      thaiFormula: "B ผลต่าง A (เอาสมาชิกของ B แต่ไม่เอา A)",
-      difficulty: "ง่าย"
-    }
+    { ast: SetNode('A'), formula: "A", thaiFormula: "เซต A", difficulty: "ง่าย" },
+    { ast: SetNode('B'), formula: "B", thaiFormula: "เซต B", difficulty: "ง่าย" },
+    { ast: ComplementNode(SetNode('A')), formula: "A'", thaiFormula: "คอมพลีเมนต์ของเซต A (ไม่ใช่ A)", difficulty: "ง่าย" },
+    { ast: ComplementNode(SetNode('B')), formula: "B'", thaiFormula: "คอมพลีเมนต์ของเซต B (ไม่ใช่ B)", difficulty: "ง่าย" },
+    { ast: SetNode('U'), formula: "U", thaiFormula: "เอกภพสัมพัทธ์ U (พื้นที่ทั้งหมด)", difficulty: "ง่าย" },
+    { ast: SetNode('empty'), formula: "∅", thaiFormula: "เซตว่าง (ไม่แรเงาพื้นที่ใดเลย)", difficulty: "ง่าย" },
+    { ast: IntersectNode(SetNode('A'), SetNode('B')), formula: "A ∩ B", thaiFormula: "A อินเตอร์เซกชัน B (ส่วนซ้ำ)", difficulty: "ง่าย" },
+    { ast: UnionNode(SetNode('A'), SetNode('B')), formula: "A ∪ B", thaiFormula: "A ยูเนียน B (รวม A และ B)", difficulty: "ง่าย" },
+    { ast: DifferenceNode(SetNode('A'), SetNode('B')), formula: "A − B", thaiFormula: "A ผลต่าง B (เอา A ไม่เอา B)", difficulty: "ง่าย" },
+    { ast: DifferenceNode(SetNode('B'), SetNode('A')), formula: "B − A", thaiFormula: "B ผลต่าง A (เอา B ไม่เอา A)", difficulty: "ง่าย" },
+    { ast: ComplementNode(UnionNode(SetNode('A'), SetNode('B'))), formula: "(A ∪ B)'", thaiFormula: "ไม่เอาทั้ง A และ B", difficulty: "ง่าย" },
+    { ast: ComplementNode(IntersectNode(SetNode('A'), SetNode('B'))), formula: "(A ∩ B)'", thaiFormula: "ทุกพื้นที่ยกเว้นจุดซ้ำกัน", difficulty: "ง่าย" },
+    { ast: UnionNode(SetNode('A'), SetNode('A')), formula: "A ∪ A", thaiFormula: "เซต A ยูเนียนตัวเอง", difficulty: "ง่าย" },
+    { ast: IntersectNode(SetNode('A'), SetNode('A')), formula: "A ∩ A", thaiFormula: "เซต A อินเตอร์เซกชันตัวเอง", difficulty: "ง่าย" },
+    { ast: UnionNode(SetNode('B'), SetNode('B')), formula: "B ∪ B", thaiFormula: "เซต B ยูเนียนตัวเอง", difficulty: "ง่าย" },
+    { ast: IntersectNode(SetNode('B'), SetNode('B')), formula: "B ∩ B", thaiFormula: "เซต B อินเตอร์เซกชันตัวเอง", difficulty: "ง่าย" },
+    { ast: DifferenceNode(SetNode('A'), SetNode('A')), formula: "A − A", thaiFormula: "เซต A หักตัวเองออก (เซตว่าง)", difficulty: "ง่าย" },
+    { ast: DifferenceNode(SetNode('B'), SetNode('B')), formula: "B − B", thaiFormula: "เซต B หักตัวเองออก (เซตว่าง)", difficulty: "ง่าย" },
+    { ast: UnionNode(SetNode('A'), SetNode('empty')), formula: "A ∪ ∅", thaiFormula: "เซต A รวมกับเซตว่าง", difficulty: "ง่าย" },
+    { ast: IntersectNode(SetNode('A'), SetNode('empty')), formula: "A ∩ ∅", thaiFormula: "เซต A ร่วมกับเซตว่าง", difficulty: "ง่าย" },
+    { ast: UnionNode(SetNode('B'), SetNode('empty')), formula: "B ∪ ∅", thaiFormula: "เซต B รวมกับเซตว่าง", difficulty: "ง่าย" },
+    { ast: IntersectNode(SetNode('B'), SetNode('empty')), formula: "B ∩ ∅", thaiFormula: "เซต B ร่วมกับเซตว่าง", difficulty: "ง่าย" },
+    { ast: UnionNode(SetNode('A'), SetNode('U')), formula: "A ∪ U", thaiFormula: "เซต A รวมกับเอกภพสัมพัทธ์", difficulty: "ง่าย" },
+    { ast: IntersectNode(SetNode('A'), SetNode('U')), formula: "A ∩ U", thaiFormula: "เซต A ในเอกภพสัมพัทธ์", difficulty: "ง่าย" },
+    { ast: UnionNode(SetNode('B'), SetNode('U')), formula: "B ∪ U", thaiFormula: "เซต B รวมกับเอกภพสัมพัทธ์", difficulty: "ง่าย" },
+    { ast: IntersectNode(SetNode('B'), SetNode('U')), formula: "B ∩ U", thaiFormula: "เซต B ในเอกภพสัมพัทธ์", difficulty: "ง่าย" },
+    { ast: ComplementNode(SetNode('U')), formula: "U'", thaiFormula: "คอมพลีเมนต์ของเอกภพสัมพัทธ์", difficulty: "ง่าย" },
+    { ast: ComplementNode(SetNode('empty')), formula: "∅'", thaiFormula: "คอมพลีเมนต์ของเซตว่าง", difficulty: "ง่าย" },
+    { ast: ComplementNode(DifferenceNode(SetNode('A'), SetNode('B'))), formula: "(A − B)'", thaiFormula: "ไม่ใช่ (A ผลต่าง B)", difficulty: "ง่าย" },
+    { ast: ComplementNode(DifferenceNode(SetNode('B'), SetNode('A'))), formula: "(B − A)'", thaiFormula: "ไม่ใช่ (B ผลต่าง A)", difficulty: "ง่าย" }
   ],
   2: [
-    {
-      ast: ComplementNode(UnionNode(SetNode('A'), SetNode('B'))),
-      formula: "(A ∪ B)'",
-      thaiFormula: "คอมพลีเมนต์ของ A ยูเนียน B (ไม่เอาทั้ง A และ B)",
-      difficulty: "ปานกลาง"
-    },
-    {
-      ast: ComplementNode(IntersectNode(SetNode('A'), SetNode('B'))),
-      formula: "(A ∩ B)'",
-      thaiFormula: "คอมพลีเมนต์ของ A อินเตอร์เซกชัน B (ทุกส่วนยกเว้นพื้นที่ซ้ำ)",
-      difficulty: "ปานกลาง"
-    },
-    {
-      ast: IntersectNode(SetNode('A'), ComplementNode(SetNode('B'))),
-      formula: "A ∩ B'",
-      thaiFormula: "A อินเตอร์เซกชันกับ คอมพลีเมนต์ของ B (ซึ่งเท่ากับ A − B)",
-      difficulty: "ปานกลาง"
-    },
-    {
-      ast: IntersectNode(ComplementNode(SetNode('A')), SetNode('B')),
-      formula: "A' ∩ B",
-      thaiFormula: "คอมพลีเมนต์ของ A อินเตอร์เซกชันกับ B (ซึ่งเท่ากับ B − A)",
-      difficulty: "ปานกลาง"
-    },
-    {
-      ast: IntersectNode(ComplementNode(SetNode('A')), ComplementNode(SetNode('B'))),
-      formula: "A' ∩ B'",
-      thaiFormula: "ไม่เอา A และไม่เอา B (พื้นที่รอบนอกทั้งหมด)",
-      difficulty: "ปานกลาง"
-    },
-    {
-      ast: UnionNode(ComplementNode(SetNode('A')), ComplementNode(SetNode('B'))),
-      formula: "A' ∪ B'",
-      thaiFormula: "ไม่ใช่ A หรือไม่ใช่ B (ทุกพื้นที่ยกเว้นจุดร่วมกัน)",
-      difficulty: "ปานกลาง"
-    },
-    {
-      ast: UnionNode(SetNode('A'), ComplementNode(SetNode('B'))),
-      formula: "A ∪ B'",
-      thaiFormula: "A ยูเนียนกับ คอมพลีเมนต์ของ B (วงกลม A และพื้นที่นอก B)",
-      difficulty: "ปานกลาง"
-    },
-    {
-      ast: UnionNode(ComplementNode(SetNode('A')), SetNode('B')),
-      formula: "A' ∪ B",
-      thaiFormula: "คอมพลีเมนต์ของ A ยูเนียนกับ B (วงกลม B และพื้นที่นอก A)",
-      difficulty: "ปานกลาง"
-    },
-    {
-      ast: ComplementNode(DifferenceNode(SetNode('A'), SetNode('B'))),
-      formula: "(A − B)'",
-      thaiFormula: "คอมพลีเมนต์ของ A ผลต่าง B (ทุกพื้นที่ยกเว้น A ฝั่งซ้าย)",
-      difficulty: "ปานกลาง"
-    },
-    {
-      ast: ComplementNode(DifferenceNode(SetNode('B'), SetNode('A'))),
-      formula: "(B − A)'",
-      thaiFormula: "คอมพลีเมนต์ของ B ผลต่าง A (ทุกพื้นที่ยกเว้น B ฝั่งขวา)",
-      difficulty: "ปานกลาง"
-    }
+    { ast: ComplementNode(UnionNode(SetNode('A'), SetNode('B'))), formula: "(A ∪ B)'", thaiFormula: "คอมพลีเมนต์ของ A ยูเนียน B", difficulty: "ปานกลาง" },
+    { ast: ComplementNode(IntersectNode(SetNode('A'), SetNode('B'))), formula: "(A ∩ B)'", thaiFormula: "คอมพลีเมนต์ของ A อินเตอร์เซกชัน B", difficulty: "ปานกลาง" },
+    { ast: IntersectNode(SetNode('A'), ComplementNode(SetNode('B'))), formula: "A ∩ B'", thaiFormula: "A อินเตอร์เซกชันกับ คอมพลีเมนต์ของ B (A − B)", difficulty: "ปานกลาง" },
+    { ast: IntersectNode(ComplementNode(SetNode('A')), SetNode('B')), formula: "A' ∩ B", thaiFormula: "คอมพลีเมนต์ของ A อินเตอร์เซกชันกับ B (B − A)", difficulty: "ปานกลาง" },
+    { ast: IntersectNode(ComplementNode(SetNode('A')), ComplementNode(SetNode('B'))), formula: "A' ∩ B'", thaiFormula: "ไม่เอา A และไม่เอา B (ขอบนอกทั้งหมด)", difficulty: "ปานกลาง" },
+    { ast: UnionNode(ComplementNode(SetNode('A')), ComplementNode(SetNode('B'))), formula: "A' ∪ B'", thaiFormula: "ไม่ใช่ A หรือไม่ใช่ B (ยกเว้นตรงกลางซ้ำ)", difficulty: "ปานกลาง" },
+    { ast: UnionNode(SetNode('A'), ComplementNode(SetNode('B'))), formula: "A ∪ B'", thaiFormula: "A ยูเนียนกับ คอมพลีเมนต์ของ B", difficulty: "ปานกลาง" },
+    { ast: UnionNode(ComplementNode(SetNode('A')), SetNode('B')), formula: "A' ∪ B", thaiFormula: "คอมพลีเมนต์ของ A ยูเนียนกับ B", difficulty: "ปานกลาง" },
+    { ast: ComplementNode(DifferenceNode(SetNode('A'), SetNode('B'))), formula: "(A − B)'", thaiFormula: "คอมพลีเมนต์ของ A ผลต่าง B", difficulty: "ปานกลาง" },
+    { ast: ComplementNode(DifferenceNode(SetNode('B'), SetNode('A'))), formula: "(B − A)'", thaiFormula: "คอมพลีเมนต์ของ B ผลต่าง A", difficulty: "ปานกลาง" },
+    { ast: UnionNode(IntersectNode(SetNode('A'), SetNode('B')), ComplementNode(SetNode('A'))), formula: "(A ∩ B) ∪ A'", thaiFormula: "ส่วนซ้ำรวมกับพื้นที่ภายนอก A", difficulty: "ปานกลาง" },
+    { ast: UnionNode(IntersectNode(SetNode('A'), SetNode('B')), ComplementNode(SetNode('B'))), formula: "(A ∩ B) ∪ B'", thaiFormula: "ส่วนซ้ำรวมกับพื้นที่ภายนอก B", difficulty: "ปานกลาง" },
+    { ast: IntersectNode(UnionNode(SetNode('A'), SetNode('B')), ComplementNode(SetNode('A'))), formula: "(A ∪ B) ∩ A'", thaiFormula: "ผลรวม A, B ส่วนที่อยู่นอก A", difficulty: "ปานกลาง" },
+    { ast: IntersectNode(UnionNode(SetNode('A'), SetNode('B')), ComplementNode(SetNode('B'))), formula: "(A ∪ B) ∩ B'", thaiFormula: "ผลรวม A, B ส่วนที่อยู่นอก B", difficulty: "ปานกลาง" },
+    { ast: UnionNode(DifferenceNode(SetNode('A'), SetNode('B')), SetNode('B')), formula: "(A − B) ∪ B", thaiFormula: "A ผลต่าง B รวมกับ B (A ∪ B)", difficulty: "ปานกลาง" },
+    { ast: UnionNode(DifferenceNode(SetNode('B'), SetNode('A')), SetNode('A')), formula: "(B − A) ∪ A", thaiFormula: "B ผลต่าง A รวมกับ A (A ∪ B)", difficulty: "ปานกลาง" },
+    { ast: IntersectNode(DifferenceNode(SetNode('A'), SetNode('B')), SetNode('B')), formula: "(A − B) ∩ B", thaiFormula: "A ผลต่าง B ร่วมกับ B (เซตว่าง)", difficulty: "ปานกลาง" },
+    { ast: IntersectNode(DifferenceNode(SetNode('B'), SetNode('A')), SetNode('A')), formula: "(B − A) ∩ A", thaiFormula: "B ผลต่าง A ร่วมกับ A (เซตว่าง)", difficulty: "ปานกลาง" },
+    { ast: DifferenceNode(ComplementNode(SetNode('A')), SetNode('B')), formula: "A' − B", thaiFormula: "ไม่เอา A และหักเซต B ออก", difficulty: "ปานกลาง" },
+    { ast: DifferenceNode(ComplementNode(SetNode('B')), SetNode('A')), formula: "B' − A", thaiFormula: "ไม่เอา B และหักเซต A ออก", difficulty: "ปานกลาง" },
+    { ast: DifferenceNode(SetNode('A'), ComplementNode(SetNode('B'))), formula: "A − B'", thaiFormula: "A หักส่วนที่ไม่ใช่ B ออก (A ∩ B)", difficulty: "ปานกลาง" },
+    { ast: DifferenceNode(SetNode('B'), ComplementNode(SetNode('A'))), formula: "B − A'", thaiFormula: "B หักส่วนที่ไม่ใช่ A ออก (A ∩ B)", difficulty: "ปานกลาง" },
+    { ast: ComplementNode(DifferenceNode(ComplementNode(SetNode('A')), SetNode('B'))), formula: "(A' − B)'", thaiFormula: "ไม่ใช่ (A' ผลต่าง B)", difficulty: "ปานกลาง" },
+    { ast: ComplementNode(DifferenceNode(ComplementNode(SetNode('B')), SetNode('A'))), formula: "(B' − A)'", thaiFormula: "ไม่ใช่ (B' ผลต่าง A)", difficulty: "ปานกลาง" },
+    { ast: DifferenceNode(ComplementNode(SetNode('A')), ComplementNode(SetNode('B'))), formula: "A' − B'", thaiFormula: "พื้นที่นอก A หักส่วนนอก B (B − A)", difficulty: "ปานกลาง" },
+    { ast: DifferenceNode(ComplementNode(SetNode('B')), ComplementNode(SetNode('A'))), formula: "B' − A'", thaiFormula: "พื้นที่นอก B หักส่วนนอก A (A − B)", difficulty: "ปานกลาง" },
+    { ast: ComplementNode(IntersectNode(ComplementNode(SetNode('A')), SetNode('B'))), formula: "(A' ∩ B)'", thaiFormula: "ไม่ใช่ (A' อินเตอร์เซกชัน B)", difficulty: "ปานกลาง" },
+    { ast: ComplementNode(IntersectNode(SetNode('A'), ComplementNode(SetNode('B')))), formula: "(A ∩ B')'", thaiFormula: "ไม่ใช่ (A อินเตอร์เซกชัน B')", difficulty: "ปานกลาง" },
+    { ast: ComplementNode(UnionNode(ComplementNode(SetNode('A')), SetNode('B'))), formula: "(A' ∪ B)'", thaiFormula: "ไม่ใช่ (A' ยูเนียน B)", difficulty: "ปานกลาง" },
+    { ast: ComplementNode(UnionNode(SetNode('A'), ComplementNode(SetNode('B')))), formula: "(A ∪ B')'", thaiFormula: "ไม่ใช่ (A ยูเนียน B')", difficulty: "ปานกลาง" }
   ],
   3: [
-    {
-      ast: IntersectNode(IntersectNode(SetNode('A'), SetNode('B')), SetNode('C')),
-      formula: "A ∩ B ∩ C",
-      thaiFormula: "อินเตอร์เซกชันของทั้งสามเซต (จุดร่วมตรงกลางสุด)",
-      difficulty: "ท้าทาย"
-    },
-    {
-      ast: UnionNode(UnionNode(SetNode('A'), SetNode('B')), SetNode('C')),
-      formula: "A ∪ B ∪ C",
-      thaiFormula: "ยูเนียนของทั้งสามเซต (พื้นที่วงกลมทั้งหมดรวมกัน)",
-      difficulty: "ท้าทาย"
-    },
-    {
-      ast: ComplementNode(UnionNode(UnionNode(SetNode('A'), SetNode('B')), SetNode('C'))),
-      formula: "(A ∪ B ∪ C)'",
-      thaiFormula: "คอมพลีเมนต์ของยูเนียนสามเซต (พื้นที่นอกวงกลมทั้งหมด)",
-      difficulty: "ท้าทาย"
-    },
-    {
-      ast: DifferenceNode(IntersectNode(SetNode('A'), SetNode('B')), SetNode('C')),
-      formula: "(A ∩ B) − C",
-      thaiFormula: "ส่วนซ้ำของ A และ B หักเซต C ออก",
-      difficulty: "ท้าทาย"
-    },
-    {
-      ast: DifferenceNode(UnionNode(SetNode('A'), SetNode('B')), SetNode('C')),
-      formula: "(A ∪ B) − C",
-      thaiFormula: "ยูเนียนของ A และ B หักเซต C ออก",
-      difficulty: "ท้าทาย"
-    },
-    {
-      ast: DifferenceNode(SetNode('A'), UnionNode(SetNode('B'), SetNode('C'))),
-      formula: "A − (B ∪ C)",
-      thaiFormula: "เซต A หักยูเนียนของ B และ C (พื้นที่ A เท่านั้น)",
-      difficulty: "ท้าทาย"
-    },
-    {
-      ast: DifferenceNode(SetNode('B'), UnionNode(SetNode('A'), SetNode('C'))),
-      formula: "B − (A ∪ C)",
-      thaiFormula: "เซต B หักยูเนียนของ A และ C (พื้นที่ B เท่านั้น)",
-      difficulty: "ท้าทาย"
-    },
-    {
-      ast: DifferenceNode(SetNode('C'), UnionNode(SetNode('A'), SetNode('B'))),
-      formula: "C − (A ∪ B)",
-      thaiFormula: "เซต C หักยูเนียนของ A และ B (พื้นที่ C เท่านั้น)",
-      difficulty: "ท้าทาย"
-    },
-    {
-      ast: IntersectNode(ComplementNode(SetNode('A')), IntersectNode(SetNode('B'), SetNode('C'))),
-      formula: "A' ∩ (B ∩ C)",
-      thaiFormula: "ไม่ใช่ A และอยู่ในอินเตอร์เซกชันของ B และ C",
-      difficulty: "ท้าทาย"
-    },
-    {
-      ast: IntersectNode(SetNode('A'), ComplementNode(UnionNode(SetNode('B'), SetNode('C')))),
-      formula: "A ∩ (B ∪ C)'",
-      thaiFormula: "เซต A ร่วมกับพื้นที่ภายนอกของ B และ C (เทียบเท่า A − (B ∪ C))",
-      difficulty: "ท้าทาย"
-    },
-    {
-      ast: UnionNode(IntersectNode(SetNode('A'), SetNode('C')), IntersectNode(SetNode('B'), SetNode('C'))),
-      formula: "(A ∩ C) ∪ (B ∩ C)",
-      thaiFormula: "ส่วนซ้ำของ A และ C รวมกับส่วนซ้ำของ B และ C",
-      difficulty: "ท้าทาย"
-    },
-    {
-      ast: ComplementNode(IntersectNode(IntersectNode(SetNode('A'), SetNode('B')), SetNode('C'))),
-      formula: "(A ∩ B ∩ C)'",
-      thaiFormula: "คอมพลีเมนต์ของส่วนร่วมทั้งสามเซต (ทุกพื้นที่ยกเว้นตรงกลางสุด)",
-      difficulty: "ท้าทาย"
-    },
-    {
-      ast: UnionNode(IntersectNode(SetNode('A'), SetNode('B')), SetNode('C')),
-      formula: "(A ∩ B) ∪ C",
-      thaiFormula: "ส่วนร่วมของ A และ B รวมกับเซต C ทั้งวง",
-      difficulty: "ท้าทาย"
-    },
-    {
-      ast: IntersectNode(ComplementNode(UnionNode(SetNode('A'), SetNode('B'))), SetNode('C')),
-      formula: "(A ∪ B)' ∩ C",
-      thaiFormula: "ไม่ใช่ทั้ง A และ B แต่เป็นสมาชิกของ C (เทียบเท่า C − (A ∪ B))",
-      difficulty: "ท้าทาย"
-    },
-    {
-      ast: IntersectNode(IntersectNode(ComplementNode(SetNode('A')), ComplementNode(SetNode('B'))), ComplementNode(SetNode('C'))),
-      formula: "A' ∩ B' ∩ C'",
-      thaiFormula: "ไม่เอา A และไม่เอา B และไม่เอา C (พื้นที่นอกวงกลมทั้งหมด)",
-      difficulty: "ท้าทาย"
-    }
+    { ast: IntersectNode(IntersectNode(SetNode('A'), SetNode('B')), SetNode('C')), formula: "A ∩ B ∩ C", thaiFormula: "จุดร่วมตรงกลางสุดของสามเซต", difficulty: "ท้าทาย" },
+    { ast: UnionNode(UnionNode(SetNode('A'), SetNode('B')), SetNode('C')), formula: "A ∪ B ∪ C", thaiFormula: "พื้นที่วงกลมทั้งหมดรวมกัน", difficulty: "ท้าทาย" },
+    { ast: ComplementNode(UnionNode(UnionNode(SetNode('A'), SetNode('B')), SetNode('C'))), formula: "(A ∪ B ∪ C)'", thaiFormula: "พื้นที่นอกวงกลมทั้งหมด", difficulty: "ท้าทาย" },
+    { ast: DifferenceNode(IntersectNode(SetNode('A'), SetNode('B')), SetNode('C')), formula: "(A ∩ B) − C", thaiFormula: "ส่วนซ้ำของ A และ B หักเซต C ออก", difficulty: "ท้าทาย" },
+    { ast: DifferenceNode(UnionNode(SetNode('A'), SetNode('B')), SetNode('C')), formula: "(A ∪ B) − C", thaiFormula: "ยูเนียนของ A และ B หักเซต C ออก", difficulty: "ท้าทาย" },
+    { ast: DifferenceNode(SetNode('A'), UnionNode(SetNode('B'), SetNode('C'))), formula: "A − (B ∪ C)", thaiFormula: "เซต A หักพื้นที่ของ B และ C ออก", difficulty: "ท้าทาย" },
+    { ast: DifferenceNode(SetNode('B'), UnionNode(SetNode('A'), SetNode('C'))), formula: "B − (A ∪ C)", thaiFormula: "เซต B หักพื้นที่ของ A และ C ออก", difficulty: "ท้าทาย" },
+    { ast: DifferenceNode(SetNode('C'), UnionNode(SetNode('A'), SetNode('B'))), formula: "C − (A ∪ B)", thaiFormula: "เซต C หักพื้นที่ของ A และ B ออก", difficulty: "ท้าทาย" },
+    { ast: IntersectNode(ComplementNode(SetNode('A')), IntersectNode(SetNode('B'), SetNode('C'))), formula: "A' ∩ (B ∩ C)", thaiFormula: "ส่วนร่วม B, C ที่อยู่นอกวง A", difficulty: "ท้าทาย" },
+    { ast: IntersectNode(SetNode('A'), ComplementNode(UnionNode(SetNode('B'), SetNode('C')))), formula: "A ∩ (B ∪ C)'", thaiFormula: "A ร่วมกับพื้นที่นอก B และ C", difficulty: "ท้าทาย" },
+    { ast: UnionNode(IntersectNode(SetNode('A'), SetNode('C')), IntersectNode(SetNode('B'), SetNode('C'))), formula: "(A ∩ C) ∪ (B ∩ C)", thaiFormula: "(A ซ้ำ C) รวมกับ (B ซ้ำ C)", difficulty: "ท้าทาย" },
+    { ast: ComplementNode(IntersectNode(IntersectNode(SetNode('A'), SetNode('B')), SetNode('C'))), formula: "(A ∩ B ∩ C)'", thaiFormula: "ทุกพื้นที่ยกเว้นตรงกลางสุด", difficulty: "ท้าทาย" },
+    { ast: UnionNode(IntersectNode(SetNode('A'), SetNode('B')), SetNode('C')), formula: "(A ∩ B) ∪ C", thaiFormula: "ส่วนร่วม A, B รวมกับเซต C ทั้งวง", difficulty: "ท้าทาย" },
+    { ast: IntersectNode(ComplementNode(UnionNode(SetNode('A'), SetNode('B'))), SetNode('C')), formula: "(A ∪ B)' ∩ C", thaiFormula: "อยู่ใน C แต่ไม่อยู่ใน A และ B", difficulty: "ท้าทาย" },
+    { ast: IntersectNode(IntersectNode(ComplementNode(SetNode('A')), ComplementNode(SetNode('B'))), ComplementNode(SetNode('C'))), formula: "A' ∩ B' ∩ C'", thaiFormula: "พื้นที่นอกวงกลมทั้งหมด", difficulty: "ท้าทาย" },
+    { ast: DifferenceNode(UnionNode(UnionNode(SetNode('A'), SetNode('B')), SetNode('C')), IntersectNode(IntersectNode(SetNode('A'), SetNode('B')), SetNode('C'))), formula: "(A ∪ B ∪ C) − (A ∩ B ∩ C)", thaiFormula: "วงกลมสามวงลบส่วนร่วมตรงกลางสุดออก", difficulty: "ท้าทาย" },
+    { ast: UnionNode(UnionNode(IntersectNode(SetNode('A'), SetNode('B')), IntersectNode(SetNode('B'), SetNode('C'))), IntersectNode(SetNode('A'), SetNode('C'))), formula: "(A ∩ B) ∪ (B ∩ C) ∪ (A ∩ C)", thaiFormula: "พื้นที่ซ้ำของทุกคู่เซต", difficulty: "ท้าทาย" },
+    { ast: IntersectNode(IntersectNode(SetNode('A'), ComplementNode(SetNode('B'))), ComplementNode(SetNode('C'))), formula: "A ∩ B' ∩ C'", thaiFormula: "พื้นที่ที่เป็นของเซต A เท่านั้น", difficulty: "ท้าทาย" },
+    { ast: IntersectNode(IntersectNode(ComplementNode(SetNode('A')), SetNode('B')), ComplementNode(SetNode('C'))), formula: "A' ∩ B ∩ C'", thaiFormula: "พื้นที่ที่เป็นของเซต B เท่านั้น", difficulty: "ท้าทาย" },
+    { ast: IntersectNode(IntersectNode(ComplementNode(SetNode('A')), ComplementNode(SetNode('B'))), SetNode('C')), formula: "A' ∩ B' ∩ C", thaiFormula: "พื้นที่ที่เป็นของเซต C เท่านั้น", difficulty: "ท้าทาย" },
+    { ast: UnionNode(ComplementNode(UnionNode(UnionNode(SetNode('A'), SetNode('B')), SetNode('C'))), IntersectNode(IntersectNode(SetNode('A'), SetNode('B')), SetNode('C'))), formula: "(A ∪ B ∪ C)' ∪ (A ∩ B ∩ C)", thaiFormula: "พื้นที่รอบนอกสุด รวมกับตรงกลางสุด", difficulty: "ท้าทาย" },
+    { ast: IntersectNode(DifferenceNode(SetNode('A'), SetNode('B')), SetNode('C')), formula: "(A − B) ∩ C", thaiFormula: "อยู่ใน A แต่ไม่อยู่ใน B และอยู่ใน Cด้วย", difficulty: "ท้าทาย" },
+    { ast: IntersectNode(DifferenceNode(SetNode('B'), SetNode('C')), SetNode('A')), formula: "(B − C) ∩ A", thaiFormula: "อยู่ใน B แต่ไม่อยู่ใน C และอยู่ใน Aด้วย", difficulty: "ท้าทาย" },
+    { ast: IntersectNode(DifferenceNode(SetNode('C'), SetNode('A')), SetNode('B')), formula: "(C − A) ∩ B", thaiFormula: "อยู่ใน C แต่ไม่อยู่ใน A และอยู่ใน Bด้วย", difficulty: "ท้าทาย" },
+    { ast: UnionNode(SetNode('A'), IntersectNode(SetNode('B'), SetNode('C'))), formula: "A ∪ (B ∩ C)", thaiFormula: "เซต A รวมกับส่วนซ้ำของ B และ C", difficulty: "ท้าทาย" },
+    { ast: UnionNode(SetNode('B'), IntersectNode(SetNode('A'), SetNode('C'))), formula: "B ∪ (A ∩ C)", thaiFormula: "เซต B รวมกับส่วนซ้ำของ A และ C", difficulty: "ท้าทาย" },
+    { ast: UnionNode(SetNode('C'), IntersectNode(SetNode('A'), SetNode('B'))), formula: "C ∪ (A ∩ B)", thaiFormula: "เซต C รวมกับส่วนซ้ำของ A และ B", difficulty: "ท้าทาย" },
+    { ast: IntersectNode(UnionNode(SetNode('A'), SetNode('B')), SetNode('C')), formula: "(A ∪ B) ∩ C", thaiFormula: "ผลรวม A, B ส่วนที่ทับซ้อนกับ C", difficulty: "ท้าทาย" },
+    { ast: IntersectNode(UnionNode(SetNode('B'), SetNode('C')), SetNode('A')), formula: "(B ∪ C) ∩ A", thaiFormula: "ผลรวม B, C ส่วนที่ทับซ้อนกับ A", difficulty: "ท้าทาย" },
+    { ast: IntersectNode(UnionNode(SetNode('A'), SetNode('C')), SetNode('B')), formula: "(A ∪ C) ∩ B", thaiFormula: "ผลรวม A, C ส่วนที่ทับซ้อนกับ B", difficulty: "ท้าทาย" },
+    { ast: UnionNode(UnionNode(DifferenceNode(SetNode('A'), SetNode('B')), DifferenceNode(SetNode('B'), SetNode('C'))), DifferenceNode(SetNode('C'), SetNode('A'))), formula: "(A − B) ∪ (B − C) ∪ (C − A)", thaiFormula: "ผลรวมของผลต่างวนสามรอบ", difficulty: "ท้าทาย" },
+    { ast: IntersectNode(ComplementNode(IntersectNode(SetNode('A'), SetNode('B'))), SetNode('C')), formula: "(A ∩ B)' ∩ C", thaiFormula: "อยู่ใน C และอยู่นอกพื้นที่ซ้ำ A, B", difficulty: "ท้าทาย" },
+    { ast: UnionNode(ComplementNode(SetNode('A')), ComplementNode(IntersectNode(SetNode('B'), SetNode('C')))), formula: "A' ∪ (B ∩ C)'", thaiFormula: "พื้นที่ภายนอก A หรือพื้นที่นอกจุดซ้ำ B, C", difficulty: "ท้าทาย" },
+    { ast: UnionNode(DifferenceNode(SetNode('A'), SetNode('B')), SetNode('C')), formula: "(A − B) ∪ C", thaiFormula: "(A หัก B) รวมกับเซต C ทั้งหมด", difficulty: "ท้าทาย" },
+    { ast: UnionNode(ComplementNode(IntersectNode(SetNode('A'), SetNode('B'))), ComplementNode(SetNode('C'))), formula: "(A ∩ B)' ∪ C'", thaiFormula: "พื้นที่นอกจุดซ้ำ A, B หรือพื้นที่นอก C", difficulty: "ท้าทาย" }
   ]
 };
 
@@ -239,6 +132,25 @@ let timeLeft = 60;
 let timerInterval = null;
 let timerEnabled = true;
 let studentShaded = new Set(); // Stores shaded region codes, e.g., '10', '001'
+let activeQuestions = []; // Shuffled active questions for the current session (10 items)
+
+// Fisher-Yates Shuffle Utility
+function shuffleArray(array) {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// Initialize Active Shuffled Questions for Level
+function initActiveQuestions() {
+  const pool = QUESTION_POOL[currentLevel];
+  const shuffled = shuffleArray(pool);
+  activeQuestions = shuffled.slice(0, 10); // Select 10 random questions per session
+}
+
 
 // DOM Elements
 const svg2Set = document.getElementById('svg-2-set');
@@ -589,7 +501,7 @@ function loadQuestion() {
     r.classList.remove('shaded', 'hover');
   });
   
-  const levelQuestions = QUESTION_POOL[currentLevel];
+  const levelQuestions = activeQuestions;
   if (currentQuestionIndex >= levelQuestions.length) {
     // Finished all questions in level
     showGameOver();
@@ -654,7 +566,7 @@ function checkAnswer(isTimeOut = false) {
   clearInterval(timerInterval);
   
   const isThreeSet = currentLevel === 3;
-  const levelQuestions = QUESTION_POOL[currentLevel];
+  const levelQuestions = activeQuestions;
   const question = levelQuestions[currentQuestionIndex];
   
   // Correct regions calculated mathematically
@@ -682,200 +594,13 @@ function checkAnswer(isTimeOut = false) {
     
     // Time bonus
     const maxTime = currentLevel === 1 ? 45 : currentLevel === 2 ? 60 : 90;
-    if (timerEnabled && timeLeft > maxTime / 2) {
-      // 50% extra points for quick response
-      const timeBonus = Math.round(earnedPoints * 0.5);
-      earnedPoints += timeBonus;
-    }
-    
-    score += earnedPoints;
-    
-    // Update displays
-    scoreValue.textContent = score;
-    streakCount.textContent = streak;
-    
-    // Banner styling
-    feedbackBanner.className = "feedback-banner correct";
-    feedbackIcon.textContent = "check_circle";
-    feedbackTitle.textContent = "คำตอบถูกต้อง!";
-    feedbackDesc.textContent = `ยินดีด้วย! คุณได้รับ +${earnedPoints} คะแนน (คอมโบ x${streakMultiplier})`;
-  } else {
-    // Incorrect logic
-    streak = 0;
-    streakCount.textContent = streak;
-    
-    feedbackBanner.className = "feedback-banner incorrect";
-    feedbackIcon.textContent = "cancel";
-    if (isTimeOut) {
-      feedbackTitle.textContent = "หมดเวลาแล้ว!";
-      feedbackDesc.textContent = "อย่าเพิ่งยอมแพ้! ลองทำความเข้าใจแนวคิดด้านล่างนี้ดูนะ";
-    } else {
-      feedbackTitle.textContent = "คำตอบยังไม่ถูกต้อง";
-      feedbackDesc.textContent = "ไม่เป็นไรนะ! ลองศึกษาคำอธิบายและรูปเปรียบเทียบในแผงเฉลยดูนะ";
-    }
-  }
-  
-  // Populate explanation steps
-  const steps = buildExplanationSteps(question.ast, isThreeSet);
-  explanationSteps.innerHTML = '';
-  
-  steps.forEach((step, idx) => {
-    const card = document.createElement('div');
-    card.className = 'step-card';
-    
-    const num = document.createElement('div');
-    num.className = 'step-num';
-    num.textContent = idx + 1;
-    
-    const info = document.createElement('div');
-    info.className = 'step-info';
-    
-    const formula = document.createElement('span');
-    formula.className = 'step-formula';
-    formula.textContent = `${step.formula} (${step.thaiFormula})`;
-    
-    const desc = document.createElement('span');
-    desc.className = 'step-desc';
-    desc.innerHTML = step.desc;
-    
-    info.appendChild(formula);
-    info.appendChild(desc);
-    card.appendChild(num);
-    card.appendChild(info);
-    explanationSteps.appendChild(card);
-  });
-  
-  // Render mini diagrams
-  updateMiniDiagrams(correctSet, studentShaded, isThreeSet);
-  
-  // Show Panel
-  feedbackPanel.classList.remove('hidden');
-  
-  // Smooth scroll
-  feedbackPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-function updateMiniDiagrams(correctRegions, studentRegions, isThreeSet) {
-  const originalSvg = document.getElementById(isThreeSet ? 'svg-3-set' : 'svg-2-set');
-  
-  const setupClone = (shadedSet, type) => {
-    const clone = originalSvg.cloneNode(true);
-    clone.removeAttribute('id');
-    clone.classList.remove('hidden');
-    
-    // Update region classes in the clone
-    const regions = clone.querySelectorAll('.region');
-    regions.forEach(region => {
-      const regKey = region.getAttribute('data-region');
-      region.classList.remove('shaded', 'hover');
-      
-      if (type === 'correct') {
-        if (shadedSet.has(regKey)) {
-          region.classList.add('correct-shaded');
-        }
-      } else if (type === 'student') {
-        if (shadedSet.has(regKey)) {
-          region.classList.add('student-shaded');
-        }
-      } else if (type === 'comparison') {
-        const inStudent = studentRegions.has(regKey);
-        const inCorrect = correctRegions.has(regKey);
-        
-        if (inStudent && inCorrect) {
-          region.classList.add('correct-shaded');
-        } else if (!inStudent && inCorrect) {
-          // Student missed it
-          region.classList.add('incorrect-missing');
-        } else if (inStudent && !inCorrect) {
-          // Student shaded extra
-          region.classList.add('incorrect-extra');
-        }
-      }
-    });
-    return clone;
-  };
-  
-  const correctContainer = document.getElementById('correct-mini-diagram');
-  const studentContainer = document.getElementById('student-mini-diagram');
-  correctContainer.innerHTML = '';
-  studentContainer.innerHTML = '';
-  
-  // 1. Correct diagram clone
-  const correctClone = setupClone(correctRegions, 'correct');
-  correctContainer.appendChild(correctClone);
-  
-  // 2. Comparison/Student diagram clone
-  const isCorrect = setsEqual(correctRegions, studentRegions);
-  const studentVisualBox = document.getElementById('student-visual-box');
-  const studentLabel = studentVisualBox.querySelector('.visual-label');
-  
-  if (isCorrect) {
-    studentLabel.textContent = 'คำตอบของคุณ (ถูกต้อง)';
-    const studentClone = setupClone(studentRegions, 'correct');
-    studentContainer.appendChild(studentClone);
-  } else {
-    studentLabel.textContent = 'จุดที่ผิดพลาดของคุณ (แดง: เกินมา, เหลือง: ขาดไป)';
-    const studentClone = setupClone(studentRegions, 'comparison');
-    studentContainer.appendChild(studentClone);
-  }
-}
-
-// ==========================================
-// Passcode Verification Modal Logic [Added]
-// ==========================================
-const TEACHER_PASSCODE = 'VennTeacher2026';
-let pendingTeacherAction = null; // 'clear' or 'export'
-
-function showPasscodeModal(action) {
-  pendingTeacherAction = action;
-  const modal = document.getElementById('passcode-modal');
-  const input = document.getElementById('teacher-passcode-input');
-  input.value = '';
-  modal.classList.remove('hidden');
-  input.focus();
-}
-
-function hidePasscodeModal() {
-  const modal = document.getElementById('passcode-modal');
-  modal.classList.add('hidden');
-  pendingTeacherAction = null;
-}
-
-function handleConfirmPasscode() {
-  const input = document.getElementById('teacher-passcode-input');
-  if (input.value === TEACHER_PASSCODE) {
-    hidePasscodeModal();
-    executePendingAction();
-  } else {
-    alert('รหัสผ่านคุณครูไม่ถูกต้อง! ไม่สามารถอนุมัติสิทธิ์ได้');
-    input.select();
-  }
-}
-
-function executePendingAction() {
-  if (pendingTeacherAction === 'clear') {
-    if (confirm('คุณต้องการลบสถิติตารางคะแนนทั้งหมดใช่หรือไม่? (การดำเนินการนี้ไม่สามารถย้อนกลับได้)')) {
-      localStorage.removeItem('venn_set_leaderboard');
-      updateClassroomFilterDropdown('all');
-      renderLeaderboard('all');
-      alert('ล้างข้อมูลตารางคะแนนสำเร็จ!');
-    }
-  } else if (pendingTeacherAction === 'export') {
-    exportLeaderboardToCSV();
-  }
-}
-
-// ==========================================
-// Leaderboard Management Functions [Added]
-// ==========================================
-function getLeaderboard() {
+    if (timerEnabled && timeLeft >  // Fallback to localStorage
   const data = localStorage.getItem('venn_set_leaderboard');
   return data ? JSON.parse(data) : [];
 }
 
-function savePlayerScore(name, classroom, scoreVal, maxLevel, maxStreak) {
+async function savePlayerScore(name, classroom, scoreVal, maxLevel, maxStreak) {
   if (!name || name.trim() === '') return;
-  const leaderboard = getLeaderboard();
   
   const now = new Date();
   const pad = (n) => String(n).padStart(2, '0');
@@ -890,19 +615,50 @@ function savePlayerScore(name, classroom, scoreVal, maxLevel, maxStreak) {
     date: dateStr
   };
   
-  leaderboard.push(record);
+  // 1. Save locally first (reliable local back-up)
+  try {
+    const localData = localStorage.getItem('venn_set_leaderboard');
+    const leaderboard = localData ? JSON.parse(localData) : [];
+    leaderboard.push(record);
+    leaderboard.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return b.streak - a.streak;
+    });
+    localStorage.setItem('venn_set_leaderboard', JSON.stringify(leaderboard));
+  } catch (e) {
+    console.error("Local storage save failed:", e);
+  }
   
-  // Sort: Score descending, then streak descending
-  leaderboard.sort((a, b) => {
-    if (b.score !== a.score) return b.score - a.score;
-    return b.streak - a.streak;
-  });
-  
-  localStorage.setItem('venn_set_leaderboard', JSON.stringify(leaderboard));
+  // 2. Save online if API URL is configured
+  if (ONLINE_LEADERBOARD_API_URL && ONLINE_LEADERBOARD_API_URL.trim() !== '') {
+    try {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), 6000); // 6 seconds timeout
+      
+      // Use text/plain type to bypass Google Apps Script CORS Preflight options check
+      const response = await fetch(ONLINE_LEADERBOARD_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8'
+        },
+        body: JSON.stringify(record),
+        signal: controller.signal
+      });
+      clearTimeout(id);
+      
+      if (response.ok) {
+        console.log("ส่งบันทึกสถิติไปยังระบบออนไลน์สำเร็จ!");
+        return;
+      }
+    } catch (e) {
+      console.warn("ไม่สามารถบันทึกสถิติออนไลน์ได้:", e);
+      throw new Error("offline_fallback");
+    }
+  }
 }
 
-function updateClassroomFilterDropdown(currentFilterValue) {
-  const leaderboard = getLeaderboard();
+async function updateClassroomFilterDropdown(currentFilterValue) {
+  const leaderboard = await getLeaderboard();
   const classFilter = document.getElementById('leaderboard-class-filter');
   
   // Extract unique classrooms
@@ -930,10 +686,27 @@ function updateClassroomFilterDropdown(currentFilterValue) {
   }
 }
 
-function renderLeaderboard(filterClass = 'all') {
-  const leaderboard = getLeaderboard();
+async function renderLeaderboard(filterClass = 'all') {
   const tableBody = document.getElementById('leaderboard-table-body');
   const noRecordsMsg = document.getElementById('no-records-msg');
+  
+  // Show loading indicator
+  tableBody.innerHTML = `
+    <tr>
+      <td colspan="7" style="text-align: center; padding: 30px; font-weight: 500; color: var(--text-muted);">
+        <span style="display: inline-block; animation: spin 1s linear infinite; margin-right: 8px; font-size: 16px;">⏳</span> 
+        กำลังเชื่อมต่อตารางคะแนนออนไลน์...
+      </td>
+    </tr>
+  `;
+  noRecordsMsg.classList.add('hidden');
+  
+  let leaderboard = [];
+  try {
+    leaderboard = await getLeaderboard();
+  } catch (e) {
+    console.error("Failed to load leaderboard:", e);
+  }
   
   tableBody.innerHTML = '';
   
@@ -979,8 +752,14 @@ function renderLeaderboard(filterClass = 'all') {
   });
 }
 
-function exportLeaderboardToCSV() {
-  const leaderboard = getLeaderboard();
+async function exportLeaderboardToCSV() {
+  let leaderboard = [];
+  try {
+    leaderboard = await getLeaderboard();
+  } catch (e) {
+    console.error("Failed to load leaderboard for CSV export:", e);
+  }
+  
   if (leaderboard.length === 0) {
     alert('ไม่มีข้อมูลคะแนนที่จะส่งออก!');
     return;
@@ -994,7 +773,7 @@ function exportLeaderboardToCSV() {
     const name = rec.name.replace(/"/g, '""');
     const classroom = (rec.classroom || '-').replace(/"/g, '""');
     const levelStr = `ระดับ ${rec.level}`;
-    const dateStr = rec.date.replace(/"/g, '""');
+    const dateStr = (rec.date || '').replace(/"/g, '""');
     csvContent += `${rank},"${name}","${classroom}","${levelStr}",${rec.score},${rec.streak},"${dateStr}"\n`;
   });
   
@@ -1081,6 +860,7 @@ function handleLevelSelect(level, fromOverlay = false) {
     svg3Set.classList.add('hidden');
   }
   
+  initActiveQuestions(); // Shuffling questions dynamically for the level
   loadQuestion();
 }
 
@@ -1104,7 +884,7 @@ function initApp() {
     
     // Automatically shade the correct regions
     const activeSvg = currentLevel === 3 ? svg3Set : svg2Set;
-    const question = QUESTION_POOL[currentLevel][currentQuestionIndex];
+    const question = activeQuestions[currentQuestionIndex];
     const correctArray = getRegionsForAST(question.ast, currentLevel === 3);
     
     studentShaded.clear();
@@ -1169,6 +949,7 @@ function initApp() {
     scoreValue.textContent = 0;
     streakCount.textContent = 0;
     currentQuestionIndex = 0;
+    initActiveQuestions(); // Shuffle questions for replay
     loadQuestion();
   });
   
@@ -1178,7 +959,7 @@ function initApp() {
       handleLevelSelect(currentLevel + 1, true);
     }
   });
-
+ 
   // Leaderboard DOM bindings [Added/Updated]
   const viewLeaderboardBtn = document.getElementById('view-leaderboard-btn');
   const closeLeaderboardBtn = document.getElementById('close-leaderboard-btn');
@@ -1195,9 +976,9 @@ function initApp() {
   const confirmPasscodeBtn = document.getElementById('confirm-passcode-btn');
   const passcodeField = document.getElementById('teacher-passcode-input');
   
-  viewLeaderboardBtn.addEventListener('click', () => {
-    updateClassroomFilterDropdown('all');
-    renderLeaderboard('all');
+  viewLeaderboardBtn.addEventListener('click', async () => {
+    await updateClassroomFilterDropdown('all');
+    await renderLeaderboard('all');
     leaderboardModal.classList.remove('hidden');
   });
   
@@ -1209,17 +990,17 @@ function initApp() {
   clearLeaderboardBtn.addEventListener('click', () => {
     showPasscodeModal('clear');
   });
-
+ 
   // Protected by Passcode Modal
   exportLeaderboardBtn.addEventListener('click', () => {
     showPasscodeModal('export');
   });
   
-  classFilter.addEventListener('change', (e) => {
-    renderLeaderboard(e.target.value);
+  classFilter.addEventListener('change', async (e) => {
+    await renderLeaderboard(e.target.value);
   });
   
-  saveScoreBtn.addEventListener('click', () => {
+  saveScoreBtn.addEventListener('click', async () => {
     const name = playerNameInput.value.trim();
     const classroom = playerClassInput.value.trim();
     
@@ -1234,21 +1015,30 @@ function initApp() {
     }
     
     try {
-      savePlayerScore(name, classroom, score, currentLevel, maxStreak);
+      await savePlayerScore(name, classroom, score, currentLevel, maxStreak);
       
       // Hide input section and show success msg
       document.getElementById('leaderboard-save-section').classList.add('hidden');
       document.getElementById('save-status-msg').classList.remove('hidden');
       
       // Show leaderboard immediately after saving
-      setTimeout(() => {
-        updateClassroomFilterDropdown('all');
-        renderLeaderboard('all');
+      setTimeout(async () => {
+        await updateClassroomFilterDropdown('all');
+        await renderLeaderboard('all');
         leaderboardModal.classList.remove('hidden');
       }, 800);
     } catch (e) {
-      console.error('Error saving score to localStorage:', e);
-      alert('เกิดข้อผิดพลาดในการบันทึกคะแนน! กรุณาลองอีกครั้ง หรือตรวจสอบว่าเบราว์เซอร์ไม่ได้เปิดโหมดส่วนตัว (Private/Incognito)');
+      console.error('Error saving score to localStorage/Online API:', e);
+      if (e.message === "offline_fallback") {
+        alert('บันทึกคะแนนลงในเครื่องเรียบร้อยแล้ว! (หมายเหตุ: ระบบเชื่อมต่อออนไลน์ขัดข้องชั่วคราว ข้อมูลนี้จึงถูกเก็บแบบออฟไลน์บนเครื่องนี้ก่อน)');
+        setTimeout(async () => {
+          await updateClassroomFilterDropdown('all');
+          await renderLeaderboard('all');
+          leaderboardModal.classList.remove('hidden');
+        }, 800);
+      } else {
+        alert('เกิดข้อผิดพลาดในการบันทึกคะแนน! กรุณาลองอีกครั้ง');
+      }
     }
   });
   
@@ -1265,6 +1055,7 @@ function initApp() {
   initSVGListeners();
   
   // Initial load
+  initActiveQuestions(); // Shuffle questions for initial load
   loadQuestion();
 }
 
