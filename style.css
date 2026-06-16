@@ -518,6 +518,7 @@ input:checked + .slider:before {
   max-width: 460px;
   height: auto;
   filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.03));
+  touch-action: none; /* Prevent double-tap zoom and smooth swipe latency on mobile */
 }
 
 .hidden {
@@ -530,6 +531,7 @@ input:checked + .slider:before {
   stroke: none;
   cursor: pointer;
   transition: fill 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: auto; /* Ensure regions receive mouse/touch events */
 }
 
 /* Hover highlights mathematically detected by JS */
@@ -541,6 +543,14 @@ input:checked + .slider:before {
 .region.shaded {
   fill: var(--region-shaded);
   filter: drop-shadow(0 0 4px rgba(99, 102, 241, 0.2));
+}
+
+/* Prevent decorative strokes, circles, and labels from intercepting pointer/touch events */
+.universe-border,
+.set-circle,
+.label-u,
+.label-set {
+  pointer-events: none;
 }
 
 /* Visual guides */

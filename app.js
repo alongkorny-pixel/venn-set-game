@@ -445,8 +445,19 @@ function buildExplanationSteps(node, isThreeSet) {
 // ==========================================
 function getSVGCoordinates(event, svgElement) {
   const point = svgElement.createSVGPoint();
-  point.x = event.clientX;
-  point.y = event.clientY;
+  
+  // Handle both mouse events and touch events
+  if (event.touches && event.touches.length > 0) {
+    point.x = event.touches[0].clientX;
+    point.y = event.touches[0].clientY;
+  } else if (event.changedTouches && event.changedTouches.length > 0) {
+    point.x = event.changedTouches[0].clientX;
+    point.y = event.changedTouches[0].clientY;
+  } else {
+    point.x = event.clientX;
+    point.y = event.clientY;
+  }
+  
   const svgPoint = point.matrixTransform(svgElement.getScreenCTM().inverse());
   return { x: svgPoint.x, y: svgPoint.y };
 }
@@ -528,6 +539,7 @@ function handleSVGClick(event, svgElement, isThreeSet) {
 
 // Bind SVG events
 function initSVGListeners() {
+  // Mouse events (desktop)
   svg2Set.addEventListener('mousemove', (e) => handleSVGMove(e, svg2Set, false));
   svg2Set.addEventListener('mouseleave', () => handleSVGLeave(svg2Set));
   svg2Set.addEventListener('click', (e) => handleSVGClick(e, svg2Set, false));
@@ -535,6 +547,31 @@ function initSVGListeners() {
   svg3Set.addEventListener('mousemove', (e) => handleSVGMove(e, svg3Set, true));
   svg3Set.addEventListener('mouseleave', () => handleSVGLeave(svg3Set));
   svg3Set.addEventListener('click', (e) => handleSVGClick(e, svg3Set, true));
+  
+  // Touch events (mobile / tablet)
+  svg2Set.addEventListener('touchstart', (e) => {
+    e.preventDefault(); // prevent scroll/zoom when tapping SVG
+    handleSVGClick(e, svg2Set, false);
+  }, { passive: false });
+  
+  svg2Set.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    handleSVGMove(e, svg2Set, false);
+  }, { passive: false });
+  
+  svg2Set.addEventListener('touchend', () => handleSVGLeave(svg2Set));
+  
+  svg3Set.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    handleSVGClick(e, svg3Set, true);
+  }, { passive: false });
+  
+  svg3Set.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    handleSVGMove(e, svg3Set, true);
+  }, { passive: false });
+  
+  svg3Set.addEventListener('touchend', () => handleSVGLeave(svg3Set));
 }
 
 // ==========================================
