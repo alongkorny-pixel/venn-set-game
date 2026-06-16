@@ -594,7 +594,213 @@ function checkAnswer(isTimeOut = false) {
     
     // Time bonus
     const maxTime = currentLevel === 1 ? 45 : currentLevel === 2 ? 60 : 90;
-    if (timerEnabled && timeLeft >  // Fallback to localStorage
+    if (timerEnabled && timeLeft > maxTime / 2) {
+      // 50% extra points for quick response
+      const timeBonus = Math.round(earnedPoints * 0.5);
+      earnedPoints += timeBonus;
+    }
+    
+    score += earnedPoints;
+    
+    // Update displays
+    scoreValue.textContent = score;
+    streakCount.textContent = streak;
+    
+    // Banner styling
+    feedbackBanner.className = "feedback-banner correct";
+    feedbackIcon.textContent = "check_circle";
+    feedbackTitle.textContent = "คำตอบถูกต้อง!";
+    feedbackDesc.textContent = `ยินดีด้วย! คุณได้รับ +${earnedPoints} คะแนน (คอมโบ x${streakMultiplier})`;
+  } else {
+    // Incorrect logic
+    streak = 0;
+    streakCount.textContent = streak;
+    
+    feedbackBanner.className = "feedback-banner incorrect";
+    feedbackIcon.textContent = "cancel";
+    if (isTimeOut) {
+      feedbackTitle.textContent = "หมดเวลาแล้ว!";
+      feedbackDesc.textContent = "อย่าเพิ่งยอมแพ้! ลองทำความเข้าใจแนวคิดด้านล่างนี้ดูนะ";
+    } else {
+      feedbackTitle.textContent = "คำตอบยังไม่ถูกต้อง";
+      feedbackDesc.textContent = "ไม่เป็นไรนะ! ลองศึกษาคำอธิบายและรูปเปรียบเทียบในแผงเฉลยดูนะ";
+    }
+  }
+  
+  // Populate explanation steps
+  const steps = buildExplanationSteps(question.ast, isThreeSet);
+  explanationSteps.innerHTML = '';
+  
+  steps.forEach((step, idx) => {
+    const card = document.createElement('div');
+    card.className = 'step-card';
+    
+    const num = document.createElement('div');
+    num.className = 'step-num';
+    num.textContent = idx + 1;
+    
+    const info = document.createElement('div');
+    info.className = 'step-info';
+    
+    const formula = document.createElement('span');
+    formula.className = 'step-formula';
+    formula.textContent = `${step.formula} (${step.thaiFormula})`;
+    
+    const desc = document.createElement('span');
+    desc.className = 'step-desc';
+    desc.innerHTML = step.desc;
+    
+    info.appendChild(formula);
+    info.appendChild(desc);
+    card.appendChild(num);
+    card.appendChild(info);
+    explanationSteps.appendChild(card);
+  });
+  
+  // Render mini diagrams
+  updateMiniDiagrams(correctSet, studentShaded, isThreeSet);
+  
+  // Show Panel
+  feedbackPanel.classList.remove('hidden');
+  
+  // Smooth scroll
+  feedbackPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function updateMiniDiagrams(correctRegions, studentRegions, isThreeSet) {
+  const originalSvg = document.getElementById(isThreeSet ? 'svg-3-set' : 'svg-2-set');
+  
+  const setupClone = (shadedSet, type) => {
+    const clone = originalSvg.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.classList.remove('hidden');
+    
+    // Update region classes in the clone
+    const regions = clone.querySelectorAll('.region');
+    regions.forEach(region => {
+      const regKey = region.getAttribute('data-region');
+      region.classList.remove('shaded', 'hover');
+      
+      if (type === 'correct') {
+        if (shadedSet.has(regKey)) {
+          region.classList.add('correct-shaded');
+        }
+      } else if (type === 'student') {
+        if (shadedSet.has(regKey)) {
+          region.classList.add('student-shaded');
+        }
+      } else if (type === 'comparison') {
+        const inStudent = studentRegions.has(regKey);
+        const inCorrect = correctRegions.has(regKey);
+        
+        if (inStudent && inCorrect) {
+          region.classList.add('correct-shaded');
+        } else if (!inStudent && inCorrect) {
+          // Student missed it
+          region.classList.add('incorrect-missing');
+        } else if (inStudent && !inCorrect) {
+          // Student shaded extra
+          region.classList.add('incorrect-extra');
+        }
+      }
+    });
+    return clone;
+  };
+  
+  const correctContainer = document.getElementById('correct-mini-diagram');
+  const studentContainer = document.getElementById('student-mini-diagram');
+  correctContainer.innerHTML = '';
+  studentContainer.innerHTML = '';
+  
+  // 1. Correct diagram clone
+  const correctClone = setupClone(correctRegions, 'correct');
+  correctContainer.appendChild(correctClone);
+  
+  // 2. Comparison/Student diagram clone
+  const isCorrect = setsEqual(correctRegions, studentRegions);
+  const studentVisualBox = document.getElementById('student-visual-box');
+  const studentLabel = studentVisualBox.querySelector('.visual-label');
+  
+  if (isCorrect) {
+    studentLabel.textContent = 'คำตอบของคุณ (ถูกต้อง)';
+    const studentClone = setupClone(studentRegions, 'correct');
+    studentContainer.appendChild(studentClone);
+  } else {
+    studentLabel.textContent = 'จุดที่ผิดพลาดของคุณ (แดง: เกินมา, เหลือง: ขาดไป)';
+    const studentClone = setupClone(studentRegions, 'comparison');
+    studentContainer.appendChild(studentClone);
+  }
+}
+
+// ==========================================
+// Passcode Verification Modal Logic [Added]
+// ==========================================
+const TEACHER_PASSCODE = 'VennTeacher2026';
+let pendingTeacherAction = null; // 'clear' or 'export'
+
+function showPasscodeModal(action) {
+  pendingTeacherAction = action;
+  const modal = document.getElementById('passcode-modal');
+  const input = document.getElementById('teacher-passcode-input');
+  input.value = '';
+  modal.classList.remove('hidden');
+  input.focus();
+}
+
+function hidePasscodeModal() {
+  const modal = document.getElementById('passcode-modal');
+  modal.classList.add('hidden');
+  pendingTeacherAction = null;
+}
+
+function handleConfirmPasscode() {
+  const input = document.getElementById('teacher-passcode-input');
+  if (input.value === TEACHER_PASSCODE) {
+    hidePasscodeModal();
+    executePendingAction();
+  } else {
+    alert('รหัสผ่านคุณครูไม่ถูกต้อง! ไม่สามารถอนุมัติสิทธิ์ได้');
+    input.select();
+  }
+}
+
+async function executePendingAction() {
+  if (pendingTeacherAction === 'clear') {
+    if (confirm('คุณต้องการลบสถิติตารางคะแนนทั้งหมดใช่หรือไม่? (การดำเนินการนี้ไม่สามารถย้อนกลับได้)')) {
+      localStorage.removeItem('venn_set_leaderboard');
+      await updateClassroomFilterDropdown('all');
+      await renderLeaderboard('all');
+      alert('ล้างข้อมูลสถิติในเครื่องนี้สำเร็จ! (หากต้องการล้างข้อมูลออนไลน์ กรุณาเคลียร์แถวข้อมูลโดยตรงใน Google Sheets ของคุณครูเพื่อความปลอดภัย)');
+    }
+  } else if (pendingTeacherAction === 'export') {
+    await exportLeaderboardToCSV();
+  }
+}
+
+// ==========================================
+// Leaderboard Management Functions [Added/Updated]
+// ==========================================
+async function getLeaderboard() {
+  if (ONLINE_LEADERBOARD_API_URL && ONLINE_LEADERBOARD_API_URL.trim() !== '') {
+    try {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), 6000); // 6 seconds timeout
+      
+      const response = await fetch(ONLINE_LEADERBOARD_API_URL, {
+        method: 'GET',
+        signal: controller.signal
+      });
+      clearTimeout(id);
+      
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (e) {
+      console.warn("ไม่สามารถดึงข้อมูลตารางคะแนนออนไลน์ได้ สลับมาแสดงข้อมูลในเครื่อง:", e);
+    }
+  }
+  
+  // Fallback to localStorage
   const data = localStorage.getItem('venn_set_leaderboard');
   return data ? JSON.parse(data) : [];
 }
